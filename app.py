@@ -114,7 +114,7 @@ IDENTITAS_DEFAULT = {
     "tahun_akademik": "2026/2027",  # Tahun akademik
     "dosen": "",                    # Dosen pengampu (belum diketahui — tampil "—")
 }
-ASSET_DIR = "assets"
+ASSET_DIR = "UTS_BI"
 ASSET_FOTO = [os.path.join(ASSET_DIR, f) for f in
               ("foto_mahasiswa.png", "foto_mahasiswa.jpg", "foto_mahasiswa.jpeg")]
 ASSET_LOGO = [os.path.join(ASSET_DIR, f) for f in
