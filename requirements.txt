@@ -4,5 +4,6 @@ numpy
 matplotlib
 seaborn
 networkx
+plotly
+mlxtend
 scikit-learn
-openpyxl
