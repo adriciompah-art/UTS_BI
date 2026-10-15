@@ -3,5 +3,6 @@ pandas
 numpy
 matplotlib
 seaborn
+networkx
 scikit-learn
 openpyxl
