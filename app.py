@@ -564,11 +564,25 @@ st.markdown("""
 @st.cache_data(show_spinner=False)
 def load_raw(path, sheet):
     """Baca mentah tanpa dibersihkan (untuk audit sebelum vs sesudah)."""
-    return pd.read_excel(path, sheet_name=sheet)
+    try:
+        return pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
+    except ImportError as exc:
+        raise ImportError(
+            "Library openpyxl belum terpasang pada Python yang menjalankan aplikasi. "
+            "Jalankan: python -m pip install openpyxl. "
+            "Jika deploy di Streamlit Cloud, tambahkan openpyxl ke requirements.txt."
+        ) from exc
 
 @st.cache_data(show_spinner=False)
 def load_and_clean(path, sheet):
-    df = pd.read_excel(path, sheet_name=sheet)
+    try:
+        df = pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
+    except ImportError as exc:
+        raise ImportError(
+            "Library openpyxl belum terpasang pada Python yang menjalankan aplikasi. "
+            "Jalankan: python -m pip install openpyxl. "
+            "Jika deploy di Streamlit Cloud, tambahkan openpyxl ke requirements.txt."
+        ) from exc
     rows_before = len(df)
     audit = {}
     audit['missing_awal'] = int(df.isnull().sum().sum())
@@ -702,6 +716,12 @@ try:
     df_raw_audit = load_raw(FILE_PATH, SHEET_RAW)
 except Exception as e:
     st.error(f"❌ Gagal membaca file `{FILE_PATH}` sheet `{SHEET_RAW}`: {e}")
+    if "openpyxl" in str(e).lower() or isinstance(e, ImportError):
+        st.info(
+            "Perbaikan: instal dependensi dengan `python -m pip install openpyxl`. "
+            "Untuk Streamlit Cloud, pastikan `openpyxl` tercantum di `requirements.txt`, "
+            "lalu lakukan redeploy/reboot aplikasi."
+        )
     st.stop()
 
 with st.spinner("🔄 Membersihkan data & menyiapkan fitur..."):
