@@ -1,0 +1,85 @@
+901: def note(text, kind=""):
+902:     st.markdown(f'<div class="note {kind}">{text}</div>', unsafe_allow_html=True)
+903: 
+904: if not MASUK:
+905:     # --- Action bar data training (gaya pill seperti referensi) ---
+906:     train_path = get_training_data_file()
+907: 
+908:     with st.container(key="cover_data_hero"):
+909:         b1, = st.columns(1, gap="medium")
+910:         with b1:
+911:             if train_path and os.path.isfile(train_path):
+912:                 st.download_button(
+913:                     "Data Training",
+914:                     data=read_file_bytes(train_path, os.path.getmtime(train_path)),
+915:                     file_name=os.path.basename(train_path),
+916:                     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+917:                     icon=":material/download:",
+918:                     key="dl_data_training",
+919:                 )
+920:             else:
+921:                 st.caption("Data Training belum tersedia.")
+922: 
+923:     idt = get_identitas()
+924:     _bg = find_asset(ASSET_KAMPUS)
+925:     _bg_uri = img_to_data_uri(_bg, __import__("os").path.splitext(_bg)[1].lstrip(".").lower() or "jpg") if _bg else None
+926:     _bg_style = f"background-image: url('{_bg_uri}');" if _bg_uri else ""
+927:     _furi = foto_data_uri()
+928:     _fimg = (f'<img class="cv-photo" src="{_furi}" alt="Foto {tampil(idt["nama"])}">'
+929:              if _furi else f'<div class="cv-initials">{inisial(idt["nama"])}</div>')
+930:     _cards = [
+931:         ("\U0001F3DB\ufe0f", "UNIVERSITAS", "Universitas Timor (UNIMOR)"),
+932:         ("\U0001F4BB", "PROGRAM STUDI", tampil(idt["prodi"])),
+933:         ("\U0001F5D3\ufe0f", "SEMESTER", f"Semester {tampil(idt['semester'])}"),
+934:         ("\U0001F3EB", "KELAS", tampil(idt["kelas"])),
+935:         ("\U0001F4D8", "MATA KULIAH", tampil(idt["matkul"])),
+936:         ("\U0001F4C5", "TAHUN AKADEMIK", tampil(idt["tahun_akademik"])),
+937:         ("\U0001F468\u200d\U0001F3EB", "DOSEN PENGAMPU", tampil(idt["dosen"])),
+938:         ("\U0001F4DD", "KETERANGAN", tampil(idt["keterangan"])),
+939:     ]
+940:     _cards_html = "".join(
+941:         [f'<div class="cv-card"><small>{ic} &nbsp;{lb}</small><b>{vl}</b></div>' for ic, lb, vl in _cards])
+942:     st.markdown(
+943:         f'<div class="cover" style="{_bg_style}"><div class="cover-grid"></div>'
+944:         f'<div class="cover-inner"><div class="cv-badge">\u2728 COVER \u2022 IDENTITAS MAHASISWA</div><br>'
+945:         f'<div class="cv-ring"><div class="cv-crop">{_fimg}</div></div>'
+946:         f'<div class="cv-name">{tampil(idt["nama"])}</div>'
+947:         f'<div><span class="cv-npm">\U0001F393 NPM {tampil(idt["nim"])}</span></div>'
+948:         f'<div class="cv-grid">{_cards_html}</div>'
+949:         f'<div class="cv-note">Foto gedung kampus UNIMOR sebagai latar cover \u2022 UTS Business Intelligence Kelas B</div>'
+950:         f'</div></div>',
+951:         unsafe_allow_html=True)
+952: 
+953:     with st.expander("\u270f\ufe0f Ubah identitas & foto (tanpa edit kode)"):
+954:         st.text_input("Nama lengkap", key="id_nama")
+955:         st.text_input("NPM", key="id_nim")
+956:         cc1, cc2 = st.columns(2)
+957:         with cc1:
+958:             st.text_input("Program Studi", key="id_prodi")
+959:             st.text_input("Semester", key="id_semester")
+960:             st.text_input("Dosen pengampu", key="id_dosen")
+961:         with cc2:
+962:             st.text_input("Fakultas", key="id_fakultas")
+963:             st.text_input("Tahun akademik", key="id_tahun")
+964:         up = st.file_uploader("Foto mahasiswa (PNG/JPG, tampil bulat otomatis)", type=["png", "jpg", "jpeg"])
+965:         if up is not None:
+966:             st.session_state["foto_bytes"] = up.getvalue()
+967:             st.success("\u2705 Foto dimuat — tampil bulat di cover.")
+968:         st.caption("\U0001F4DD Kolom kosong tampil sebagai \u201c—\u201d (tidak dikarang).")
+969: 
+970:     _sp1, _cta, _sp2 = st.columns([1, 2, 1])
+971:     with _cta:
+972:         if st.button("\U0001F680 MULAI SEKARANG \u2014 Masuk ke Sistem", use_container_width=True, type="primary"):
+973:             masuk_sistem("\U0001F3E0 Beranda Sistem")
+974:     st.caption("\U0001F4DD *Klik tombol di atas untuk masuk ke halaman sistem (sidebar + 6 modul analisis). Kembali kapan saja lewat tombol \u201c\u2190 Halaman Depan\u201d di sidebar.*")
+975: 
+976: elif MENU == "🏠 Beranda Sistem":
+977:     hero('🏠 Beranda <span class="grad-text-cool">Sistem Analitik</span>',
+978:          "Ringkasan data & peta pengerjaan — pilih modul analisis di sidebar untuk mulai bekerja.",
+979:          ["EDA", "Preprocessing", "Apriori", "K-Means", "Dashboard BI", "Rekomendasi"],
+980:          theme="theme-home", eyebrow="SISTEM • ANALITIK • DECISION SUPPORT")
+981: 
+982:     st.markdown("### 📊 Ringkasan Data")
+983:     c1, c2, c3, c4 = st.columns(4)
+984:     c1.metric("💰 Total Penjualan (bersih)", f"{fmt_rp(df['Line_Total'].sum())}")
+985:     c2.metric("🧾 Transaksi Unik", f"{df['Transaction_ID'].nunique():,}")
