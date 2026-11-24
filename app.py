@@ -97,12 +97,10 @@ def ticks_rp(vals, n=5):
 # ============================================================
 # 0b. IDENTITAS UTS KELAS B + ASET GAMBAR (UNIMOR & MAHASISWA)
 # ------------------------------------------------------------
-# PENTING — kejujuran data:
-# - Proyek ini TIDAK berisi data identitas/nim/foto di file Excel/Word,
-#   jadi semua kolom identitas default KOSONG (placeholder "—").
-# - Isi identitas lewat panel "Lengkapi identitas" di Dashboard
-#   atau letakkan file gambar di folder assets/ (lihat assets/README.md).
-# - Jangan mengarang NIM/nama/foto: hanya tampilkan data yang diisi pemilik.
+# Catatan identitas:
+# - Identitas default diisi seperlunya agar cover langsung tampil, tapi tetap bisa diedit
+#   lewat panel "Ubah identitas & foto" di halaman depan.
+# - Foto default dibaca otomatis dari assets/foto_mahasiswa.* jika ada.
 # ============================================================
 IDENTITAS_DEFAULT = {
     "nama": "Adrianus S. Ciompah",  # Nama lengkap mahasiswa
@@ -114,7 +112,7 @@ IDENTITAS_DEFAULT = {
     "keterangan": "Ujian Tengah Semester (UTS)",
     "semester": "7",                # Semester
     "tahun_akademik": "2026/2027",  # Tahun akademik
-    "dosen": "",                    # Dosen pengampu (belum diketahui — tampil "—")
+    "dosen": "Krisantus J. Tey Seran, S.T., M.T",  # Dosen pengampu (default, bisa diedit di cover)
 }
 ASSET_DIR = "assets"
 ASSET_FOTO = [os.path.join(ASSET_DIR, f) for f in
@@ -602,6 +600,11 @@ st.markdown("""
     .block-container { background-size: 24px 24px, 24px 24px, 22px 22px; }
     .pf-photo, .pf-initials { width: 128px !important; height: 128px !important; }
     .campus-img { height: 200px !important; }
+    .st-key-cover_data_hero { padding: 14px 14px; border-radius: 14px; }
+    .st-key-cover_data_hero div[data-testid="stDownloadButton"] button { min-width: 0; width: 100% !important; font-size: .92rem !important; padding: 0.62rem 1rem !important; }
+    .block-container { padding-left: 0.8rem !important; padding-right: 0.8rem !important; }
+    div[data-testid="stMetricValue"] > div { font-size: 1.05rem; }
+    .step-pills span { font-size: .68rem; padding: 6px 10px; }
   }
   /* ---------- DASHBOARD KELAS B: profil, kampus, kartu nav ---------- */
   @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
