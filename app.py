@@ -36,8 +36,10 @@ sns.set_style("whitegrid")
 plt.rcParams['figure.figsize'] = (10, 6)
 plt.rcParams['font.size'] = 10
 
-FILE_PATH = 'P8. UTS_Business Intelligence.xlsx'
+DEFAULT_DATA_PATH = 'P8. UTS_Business Intelligence.xlsx'
+FILE_PATH = DEFAULT_DATA_PATH  # kompatibilitas: referensi lama
 SHEET_RAW = 'Data_Raw'
+PREPARED_DATA_DIR = 'data_tes'
 
 # Default parameter (bisa diubah interaktif di Tab Apriori / K-Means)
 DEFAULT_SUPPORT = 0.02
@@ -114,7 +116,7 @@ IDENTITAS_DEFAULT = {
     "tahun_akademik": "2026/2027",  # Tahun akademik
     "dosen": "",                    # Dosen pengampu (belum diketahui — tampil "—")
 }
-ASSET_DIR = "UTS_BI"
+ASSET_DIR = "assets"
 ASSET_FOTO = [os.path.join(ASSET_DIR, f) for f in
               ("foto_mahasiswa.png", "foto_mahasiswa.jpg", "foto_mahasiswa.jpeg")]
 ASSET_LOGO = [os.path.join(ASSET_DIR, f) for f in
@@ -133,6 +135,8 @@ if "foto_bytes" not in st.session_state:
     st.session_state["foto_bytes"] = None
 if "masuk" not in st.session_state:
     st.session_state["masuk"] = False  # False = halaman depan (tanpa sidebar), True = masuk sistem
+if "active_data_path" not in st.session_state:
+    st.session_state["active_data_path"] = DEFAULT_DATA_PATH
 
 
 def find_asset(candidates):
@@ -172,6 +176,65 @@ def get_identitas():
 
 def tampil(val):
     return val if val else "—"
+
+
+def ensure_prepared_data_dir():
+    os.makedirs(PREPARED_DATA_DIR, exist_ok=True)
+
+
+def list_prepared_excel_files():
+    files = []
+    if os.path.isfile(DEFAULT_DATA_PATH):
+        files.append(DEFAULT_DATA_PATH)
+    ensure_prepared_data_dir()
+    try:
+        for name in sorted(os.listdir(PREPARED_DATA_DIR)):
+            if name.lower().endswith(('.xlsx', '.xls')):
+                files.append(os.path.join(PREPARED_DATA_DIR, name))
+    except Exception:
+        pass
+    seen = set()
+    out = []
+    for f in files:
+        key = os.path.abspath(f)
+        if key not in seen:
+            seen.add(key)
+            out.append(f)
+    return out
+
+
+def save_uploaded_excel(uploaded_file):
+    ensure_prepared_data_dir()
+    safe_name = os.path.basename(uploaded_file.name).strip().replace(' ', '_')
+    if not safe_name:
+        safe_name = 'data_uji.xlsx'
+    if not safe_name.lower().endswith(('.xlsx', '.xls')):
+        safe_name += '.xlsx'
+    dest = os.path.join(PREPARED_DATA_DIR, safe_name)
+    with open(dest, 'wb') as f:
+        f.write(uploaded_file.getbuffer())
+    return dest
+
+
+def get_active_data_path():
+    p = st.session_state.get('active_data_path', DEFAULT_DATA_PATH)
+    if p and os.path.isfile(p):
+        return p
+    if os.path.isfile(DEFAULT_DATA_PATH):
+        st.session_state['active_data_path'] = DEFAULT_DATA_PATH
+        return DEFAULT_DATA_PATH
+    return p
+
+
+def get_training_data_file():
+    """Data training memakai file Excel asli di folder proyek (tanpa split)."""
+    return DEFAULT_DATA_PATH
+
+
+@st.cache_data(show_spinner=False)
+def read_file_bytes(path, mtime=None):
+    with open(path, 'rb') as f:
+        return f.read()
 
 
 def inisial(nama):
@@ -483,6 +546,49 @@ st.markdown("""
     font-family: ui-monospace, Consolas, monospace; margin-bottom: 5px; }
   .cv-card b { color: #fff; font-size: 1.04rem; font-weight: 700; }
   .cv-note { margin-top: 16px; font-size: .8rem; color: #C4CFF5; }
+  /* ---------- COVER DATA ACTION BAR (Data Training) ---------- */
+  .st-key-cover_data_hero {
+    position: relative; border-radius: 16px; overflow: hidden; isolation: isolate;
+    padding: 16px 20px; margin: 0 0 16px 0;
+    border: 1px solid rgba(255,255,255,.14);
+    box-shadow: 0 10px 26px rgba(60,10,24,.20);
+    background: linear-gradient(135deg, #5B1326 0%, #3D0B18 100%);
+  }
+  .st-key-cover_data_hero::after {
+    content:""; position:absolute; inset:0; pointer-events:none;
+    background: radial-gradient(130% 120% at 50% -30%, rgba(255,255,255,.16), transparent 60%);
+  }
+  .st-key-cover_data_hero > div { position: relative; z-index: 1; }
+  .st-key-cover_data_hero div[data-testid="stHorizontalBlock"] { max-width: 100%; margin: 0; gap: 0.8rem; }
+  .st-key-cover_data_hero div[data-testid="stElementContainer"] { width: 100% !important; }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] { display:flex; justify-content:center; width:100%; }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] button {
+    width: auto !important; min-width: 210px; max-width: 100%;
+    background: #FBF3E4 !important;
+    color: #3B1D10 !important;
+    border: 1px solid rgba(255,255,255,.55) !important;
+    border-radius: 999px !important;
+    padding: 0.62rem 1.6rem !important;
+    font-weight: 700 !important;
+    font-size: 0.95rem !important;
+    letter-spacing: .01em !important;
+    box-shadow: 0 6px 16px rgba(0,0,0,.24), inset 0 1px 0 rgba(255,255,255,.8) !important;
+    transition: transform .18s ease, box-shadow .18s ease, background .18s ease !important;
+    min-height: 44px;
+  }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] button:hover {
+    background: #FFF9EE !important;
+    transform: translateY(-2px);
+    box-shadow: 0 10px 22px rgba(0,0,0,.30) !important;
+  }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] button:active { transform: translateY(0); }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] button [data-testid="stIconMaterial"] {
+    color: #B07A2F !important;
+    font-size: 1.2rem !important;
+  }
+  .st-key-cover_data_hero div[data-testid="stDownloadButton"] button p {
+    color: #3B1D10 !important;
+  }
   /* responsif */
   @media (max-width: 768px) {
     .cv-grid { grid-template-columns: 1fr; }
@@ -564,25 +670,11 @@ st.markdown("""
 @st.cache_data(show_spinner=False)
 def load_raw(path, sheet):
     """Baca mentah tanpa dibersihkan (untuk audit sebelum vs sesudah)."""
-    try:
-        return pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
-    except ImportError as exc:
-        raise ImportError(
-            "Library openpyxl belum terpasang pada Python yang menjalankan aplikasi. "
-            "Jalankan: python -m pip install openpyxl. "
-            "Jika deploy di Streamlit Cloud, tambahkan openpyxl ke requirements.txt."
-        ) from exc
+    return pd.read_excel(path, sheet_name=sheet)
 
 @st.cache_data(show_spinner=False)
 def load_and_clean(path, sheet):
-    try:
-        df = pd.read_excel(path, sheet_name=sheet, engine="openpyxl")
-    except ImportError as exc:
-        raise ImportError(
-            "Library openpyxl belum terpasang pada Python yang menjalankan aplikasi. "
-            "Jalankan: python -m pip install openpyxl. "
-            "Jika deploy di Streamlit Cloud, tambahkan openpyxl ke requirements.txt."
-        ) from exc
+    df = pd.read_excel(path, sheet_name=sheet)
     rows_before = len(df)
     audit = {}
     audit['missing_awal'] = int(df.isnull().sum().sum())
@@ -710,27 +802,27 @@ def run_kmeans_final(_rfm, _Xs, k_opt):
     return out, profile
 
 # ============================================================
+# ============================================================
 # 3. LOAD DATA
 # ============================================================
+ACTIVE_DATA_PATH = get_active_data_path()
+
 try:
-    df_raw_audit = load_raw(FILE_PATH, SHEET_RAW)
+    df_raw_audit = load_raw(ACTIVE_DATA_PATH, SHEET_RAW)
 except Exception as e:
-    st.error(f"❌ Gagal membaca file `{FILE_PATH}` sheet `{SHEET_RAW}`: {e}")
-    if "openpyxl" in str(e).lower() or isinstance(e, ImportError):
-        st.info(
-            "Perbaikan: instal dependensi dengan `python -m pip install openpyxl`. "
-            "Untuk Streamlit Cloud, pastikan `openpyxl` tercantum di `requirements.txt`, "
-            "lalu lakukan redeploy/reboot aplikasi."
-        )
+    st.error(f"❌ Gagal membaca file `{ACTIVE_DATA_PATH}` sheet `{SHEET_RAW}`: {e}")
+    st.info("Pastikan file Excel memiliki sheet `Data_Raw` dengan format yang sesuai. Anda bisa kembali ke Halaman Depan dan pilih/upload data lain.")
+    if st.button("← Kembali ke Halaman Depan", type="primary"):
+        st.session_state["masuk"] = False
+        st.rerun()
     st.stop()
 
-with st.spinner("🔄 Membersihkan data & menyiapkan fitur..."):
-    df, rows_before, audit = load_and_clean(FILE_PATH, SHEET_RAW)
+with st.spinner("🧹 Membersihkan data & menyiapkan fitur..."):
+    df, rows_before, audit = load_and_clean(ACTIVE_DATA_PATH, SHEET_RAW)
     rfm, snapshot_date = build_rfm(df)
     basket = build_basket(df)
     inertia_all, sil_all, X_scaled = evaluate_k(rfm, K_CANDIDATES)
 
-# ============================================================
 # 4. GERBANG HALAMAN: depan (tanpa sidebar) vs sistem (sidebar)
 # ============================================================
 MASUK = bool(st.session_state.get("masuk", False))
@@ -777,7 +869,7 @@ if MASUK:
     selected_cat = st.sidebar.selectbox("🏷️ Kategori produk", categories)
 
     st.sidebar.markdown("---")
-    st.sidebar.markdown(f"📄 **Data awal:** {rows_before:,} baris  \n✅ **Data bersih:** {len(df):,} baris  \n🗓️ **Snapshot RFM:** {snapshot_date.date()}  \n🧺 **Transaksi unik:** {df['Transaction_ID'].nunique():,}  \n👥 **Pelanggan:** {df['Customer_ID'].nunique():,}")
+    st.sidebar.markdown(f"📄 **Sumber data:** `{os.path.basename(ACTIVE_DATA_PATH)}`  \n📊 **Data awal:** {rows_before:,} baris  \n✅ **Data bersih:** {len(df):,} baris  \n🗓️ **Snapshot RFM:** {snapshot_date.date()}  \n🧾 **Transaksi unik:** {df['Transaction_ID'].nunique():,}  \n👥 **Pelanggan:** {df['Customer_ID'].nunique():,}")
     st.sidebar.caption("📝 Snapshot = tanggal acuan Recency (tgl terakhir + 1 hari).")
 else:
     MENU = "🛬 Halaman Depan"
@@ -810,6 +902,24 @@ def note(text, kind=""):
     st.markdown(f'<div class="note {kind}">{text}</div>', unsafe_allow_html=True)
 
 if not MASUK:
+    # --- Action bar data training (gaya pill seperti referensi) ---
+    train_path = get_training_data_file()
+
+    with st.container(key="cover_data_hero"):
+        b1, = st.columns(1, gap="medium")
+        with b1:
+            if train_path and os.path.isfile(train_path):
+                st.download_button(
+                    "Data Training",
+                    data=read_file_bytes(train_path, os.path.getmtime(train_path)),
+                    file_name=os.path.basename(train_path),
+                    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+                    icon=":material/download:",
+                    key="dl_data_training",
+                )
+            else:
+                st.caption("Data Training belum tersedia.")
+
     idt = get_identitas()
     _bg = find_asset(ASSET_KAMPUS)
     _bg_uri = img_to_data_uri(_bg, __import__("os").path.splitext(_bg)[1].lstrip(".").lower() or "jpg") if _bg else None
@@ -839,6 +949,7 @@ if not MASUK:
         f'<div class="cv-note">Foto gedung kampus UNIMOR sebagai latar cover \u2022 UTS Business Intelligence Kelas B</div>'
         f'</div></div>',
         unsafe_allow_html=True)
+
     with st.expander("\u270f\ufe0f Ubah identitas & foto (tanpa edit kode)"):
         st.text_input("Nama lengkap", key="id_nama")
         st.text_input("NPM", key="id_nim")
